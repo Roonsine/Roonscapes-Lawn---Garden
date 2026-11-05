@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roonscapes Lawn & Garden</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1 class="logo">Roonscapes</h1>
+            <nav>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#services">Services</a></li>
+                    <li><a href="#gallery">Our Work</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h2>Professional Lawn Care & Landscaping</h2>
+            <p>From precision mowing to beautiful garden transformations, we keep your property looking its best.</p>
+            <a href="#contact" class="btn">Get a Free Estimate</a>
+        </div>
+    </section>
+
+    <section id="services">
+        <div class="container">
+            <h2 class="section-title">Our Services</h2>
+            <div class="services-grid">
+                <div class="service-card">
+                    <h3>Lawn Maintenance</h3>
+                    <p>Scheduled mowing, trimming, edging, and bagger cleaning to keep your turf lush, healthy, and sharp.</p>
+                </div>
+                <div class="service-card">
+                    <h3>Landscaping Design</h3>
+                    <p>Enhancing your curb appeal with perennial planting, mulch installation, and custom garden bed cleanups.</p>
+                </div>
+                <div class="service-card">
+                    <h3>Property Cleanups</h3>
+                    <p>Seasonal leaf removal, brush clearing, and detailing to maintain a manicured landscape year-round.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="gallery">
+        <div class="container">
+            <h2 class="section-title">Our Gallery</h2>
+            <div class="gallery-grid">
+                <div class="gallery-item" onclick="openLightbox('Lawn Mowing')">
+                    <div class="placeholder-img">Lawn Maintenance Project</div>
+                </div>
+                <div class="gallery-item" onclick="openLightbox('Garden Landscaping')">
+                    <div class="placeholder-img">Perennial Garden Design</div>
+                </div>
+                <div class="gallery-item" onclick="openLightbox('Property Cleanup')">
+                    <div class="placeholder-img">Seasonal Cleanup Service</div>
+                </div>
+            </div>
+        </div>
+    </section>
+<!-- Place your existing Roonscapes navbar/hero sections up here -->
+
+<section id="quote-section" class="max-w-xl mx-auto my-12 bg-white p-8 rounded-lg shadow-md border border-gray-200">
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Request a Quote</h2>
+    <p class="text-sm text-gray-600 mb-6">Enter your project measurements to calculate an instant estimated baseline price.</p>
+
+    <!-- Display success messages when Django redirects after saving -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 p-4 text-green-800 bg-green-100 rounded-md font-medium">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST" action="{% url 'home' %}">
+        {% csrf_token %}
+        
+        <!-- Contact Details -->
+        <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
+            <input type="text" name="name" required class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
+                <input type="email" name="email" required class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Phone Number</label>
+                <input type="text" name="phone" placeholder="(519) 555-0123" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none">
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Service Address</label>
+            <input type="text" name="address" required placeholder="123 Street Name, Chatham" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none">
+        </div>
+
+        <!-- Project Metrics -->
+        <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Select Service</label>
+            <select id="service_type" name="service_type" class="w-full p-2.5 border border-gray-300 rounded bg-white">
+                <option value="Lawn Maintenance">Lawn Maintenance ($0.15 / sq ft)</option>
+                <option value="Landscaping Design">Landscaping Design ($0.50 / sq ft)</option>
+                <option value="Property Cleanups">Property Cleanup ($0.25 / sq ft)</option>
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Estimated Size (Square Footage)</label>
+            <input type="number" id="sq_ft" name="sq_ft" value="0" min="0" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none">
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Additional Project Details / Notes</label>
+            <textarea name="notes" rows="3" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"></textarea>
+        </div>
+
+        <!-- Real-Time Interactive Estimate Preview Box -->
+        <div class="bg-gray-50 border border-gray-200 p-4 rounded-md mb-6 flex justify-between items-center">
+            <span class="text-sm font-medium text-gray-600">Estimated Total Baseline:</span>
+            <span id="live_price_display" class="text-xl font-bold text-green-600">$0.00</span>
+        </div>
+
+        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition-colors shadow">
+            Submit Estimate Request
+        </button>
+    </form>
+</section>
+
+<!-- Client-Side Real-Time Math Calculator Script -->
+<script>
+    const serviceSelect = document.getElementById('service_type');
+    const sqFtInput = document.getElementById('sq_ft');
+    const priceDisplay = document.getElementById('live_price_display');
+
+    function calculateEstimate() {
+        const sqFt = parseFloat(sqFtInput.value) || 0;
+        const service = serviceSelect.value;
+        let rate = 0.25;
+
+        if (service === "Lawn Maintenance") {
+            rate = 0.15;
+        } else if (service === "Landscaping Design") {
+            rate = 0.50;
+        }
+
+        const total = sqFt * rate;
+        priceDisplay.innerText = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    // Recalculate price as user changes service types or inputs numbers
+    serviceSelect.addEventListener('change', calculateEstimate);
+    sqFtInput.addEventListener('input', calculateEstimate);
+</script>
+
+<!-- Place your existing Roonscapes footer down here -->
+    <footer>
+        <p>&copy; 2026 Roonscapes Lawn & Garden. All rights reserved.</p>
+    </footer>
+
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <span class="close-btn">&times;</span>
+        <div id="lightbox-content" class="lightbox-content"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
