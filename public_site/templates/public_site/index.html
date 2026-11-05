@@ -1,10 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roonscapes Lawn & Garden</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="{% static 'public_site/styles.css' %}">
 </head>
 <body>
     <header>
@@ -67,102 +68,139 @@
         </div>
     </section>
 <!-- Place your existing Roonscapes navbar/hero sections up here -->
-
 <section id="quote-section" class="max-w-xl mx-auto my-12 bg-white p-8 rounded-lg shadow-md border border-gray-200">
-    <h2 class="text-3xl font-bold text-gray-800 mb-2">Request a Quote</h2>
-    <p class="text-sm text-gray-600 mb-6">Enter your project measurements to calculate an instant estimated baseline price.</p>
-
-    <!-- Display success messages when Django redirects after saving -->
+    <h2 class="text-3xl font-bold text-gray-800 mb-2">Request an Instant Quote</h2>
+    
     {% if messages %}
         {% for message in messages %}
-            <div class="mb-4 p-4 text-green-800 bg-green-100 rounded-md font-medium">
-                {{ message }}
-            </div>
+            <div class="mb-4 p-4 text-green-800 bg-green-100 rounded-md font-medium">{{ message }}</div>
         {% endfor %}
     {% endif %}
 
     <form method="POST" action="{% url 'home' %}">
         {% csrf_token %}
         
-        <!-- Contact Details -->
+        <!-- Contact Inputs -->
         <div class="mb-4">
             <label class="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
             <input type="text" name="name" required class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none">
         </div>
-
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
-                <input type="email" name="email" required class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                <input type="email" name="email" required class="w-full p-2.5 border border-gray-300 rounded">
             </div>
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Phone Number</label>
-                <input type="text" name="phone" placeholder="(519) 555-0123" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Phone</label>
+                <input type="text" name="phone" class="w-full p-2.5 border border-gray-300 rounded">
             </div>
         </div>
-
         <div class="mb-4">
             <label class="block text-sm font-semibold text-gray-700 mb-1">Service Address</label>
-            <input type="text" name="address" required placeholder="123 Street Name, Chatham" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none">
+            <input type="text" name="address" required class="w-full p-2.5 border border-gray-300 rounded">
         </div>
 
-        <!-- Project Metrics -->
+        <!-- Service Core Category -->
         <div class="mb-4">
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Select Service</label>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Select Core Service</label>
             <select id="service_type" name="service_type" class="w-full p-2.5 border border-gray-300 rounded bg-white">
-                <option value="Lawn Maintenance">Lawn Maintenance ($0.15 / sq ft)</option>
-                <option value="Landscaping Design">Landscaping Design ($0.50 / sq ft)</option>
-                <option value="Property Cleanups">Property Cleanup ($0.25 / sq ft)</option>
+                <option value="Lawn Maintenance">Basic Cut (Mow & Blow)</option>
+                <option value="Weeding Maintenance">Weeding & Routine Gardening Maintenance</option>
             </select>
         </div>
 
-        <div class="mb-4">
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Estimated Size (Square Footage)</label>
-            <input type="number" id="sq_ft" name="sq_ft" value="0" min="0" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none">
+        <!-- Dynamic Group 1: Lawn Parameters (Visible only when Lawn Maintenance is selected) -->
+        <div id="lawn_group" class="block">
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Estimated Lawn Size (Square Footage)</label>
+                <input type="number" id="sq_ft" name="sq_ft" value="1000" min="0" step="100" class="w-full p-2.5 border border-gray-300 rounded">
+            </div>
+            <div class="mb-4 flex items-center gap-2">
+                <input type="checkbox" id="include_edging" name="include_edging" value="yes" class="w-4 h-4 text-green-600 border-gray-300 rounded">
+                <label for="include_edging" class="text-sm font-medium text-gray-700">Include Professional Edging (+$10 flat base rate)</label>
+            </div>
+        </div>
+
+        <!-- Dynamic Group 2: Gardening Parameters (Visible only when Weeding is selected) -->
+        <div id="gardening_group" class="hidden">
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Estimated Maintenance Time (Hours)</label>
+                <input type="number" id="weeding_hours" name="weeding_hours" value="1" min="1" class="w-full p-2.5 border border-gray-300 rounded">
+                <p class="text-xs text-gray-500 mt-1">Billed at $40.00/hour</p>
+            </div>
         </div>
 
         <div class="mb-6">
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Additional Project Details / Notes</label>
-            <textarea name="notes" rows="3" class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none"></textarea>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Special Notes / Access Information</label>
+            <textarea name="notes" rows="3" class="w-full p-2.5 border border-gray-300 rounded"></textarea>
         </div>
 
-        <!-- Real-Time Interactive Estimate Preview Box -->
+        <!-- Price Display Box -->
         <div class="bg-gray-50 border border-gray-200 p-4 rounded-md mb-6 flex justify-between items-center">
-            <span class="text-sm font-medium text-gray-600">Estimated Total Baseline:</span>
-            <span id="live_price_display" class="text-xl font-bold text-green-600">$0.00</span>
+            <span class="text-sm font-medium text-gray-600">Calculated Estimate Preview:</span>
+            <span id="live_price_display" class="text-xl font-bold text-green-600">$35.00</span>
         </div>
 
         <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition-colors shadow">
-            Submit Estimate Request
+            Submit Quote
         </button>
     </form>
 </section>
 
-<!-- Client-Side Real-Time Math Calculator Script -->
+<!-- Dynamic Form Toggling and Live Calculation Script -->
 <script>
     const serviceSelect = document.getElementById('service_type');
+    const lawnGroup = document.getElementById('lawn_group');
+    const gardeningGroup = document.getElementById('gardening_group');
+    
     const sqFtInput = document.getElementById('sq_ft');
+    const edgingCheckbox = document.getElementById('include_edging');
+    const hoursInput = document.getElementById('weeding_hours');
     const priceDisplay = document.getElementById('live_price_display');
 
-    function calculateEstimate() {
-        const sqFt = parseFloat(sqFtInput.value) || 0;
+    function updateFormFieldsAndCalculate() {
         const service = serviceSelect.value;
-        let rate = 0.25;
+        let total = 0;
 
         if (service === "Lawn Maintenance") {
-            rate = 0.15;
-        } else if (service === "Landscaping Design") {
-            rate = 0.50;
+            lawnGroup.style.display = "block";
+            gardeningGroup.style.display = "none";
+
+            const sqFt = parseFloat(sqFtInput.value) || 0;
+            
+            // Basic cut rule: $35 baseline, $5 per 1,000 sq ft over 5,000
+            if (sqFt <= 5000) {
+                total += 35;
+            } else {
+                const intervals = Math.ceil((sqFt - 5000) / 1000);
+                total += 35 + (intervals * 5);
+            }
+
+            // Edging rule: $10 baseline, $5 per 1,000 sq ft over 5,000
+            if (edgingCheckbox.checked) {
+                total += 10;
+                if (sqFt > 5000) {
+                    const intervals = Math.ceil((sqFt - 5000) / 1000);
+                    total += (intervals * 5);
+                }
+            }
+        } else if (service === "Weeding Maintenance") {
+            lawnGroup.style.display = "none";
+            gardeningGroup.style.display = "block";
+
+            const hours = parseFloat(hoursInput.value) || 0;
+            total += hours * 40; // $40 per hour rule
         }
 
-        const total = sqFt * rate;
-        priceDisplay.innerText = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        priceDisplay.innerText = `$${total.toFixed(2)}`;
     }
 
-    // Recalculate price as user changes service types or inputs numbers
-    serviceSelect.addEventListener('change', calculateEstimate);
-    sqFtInput.addEventListener('input', calculateEstimate);
+    serviceSelect.addEventListener('change', updateFormFieldsAndCalculate);
+    sqFtInput.addEventListener('input', updateFormFieldsAndCalculate);
+    edgingCheckbox.addEventListener('change', updateFormFieldsAndCalculate);
+    hoursInput.addEventListener('input', updateFormFieldsAndCalculate);
 </script>
+
 
 <!-- Place your existing Roonscapes footer down here -->
     <footer>
@@ -174,6 +212,5 @@
         <div id="lightbox-content" class="lightbox-content"></div>
     </div>
 
-    <script src="script.js"></script>
 </body>
 </html>

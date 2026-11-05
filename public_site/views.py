@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from business_manager.models import Customer, Quote
 from decimal import Decimal
+import math
 
 # Create your views here.
 def home_page(request):
@@ -11,15 +12,13 @@ def home_page(request):
         email = request.POST.get('email').strip().lower()
         phone = request.POST.get('phone')
         address = request.POST.get('address')
+
         service_type = request.POST.get('address')
-        sq_ft_raw = request.POST.get('sq_ft', '0')
+        sq_ft = request.POST.get('sq_ft', '0')
+        include_edging = request.POST.get('include_edging') == 'yes'
+        weeding_hours = int(request.POST.get('weeding_hours', 0))
         notes = request.POST.get('notes', '')
 
-        # Fallback to 0 if the user submits an empty of invalid square footage.
-        try:
-            sq_ft = int(sq_ft_raw)
-        except:
-            sq_ft = 0
 
         # 2. Get or create the customer profile using their email as a unique identifier.
         customer, created = Customer.objects.get_or_create(
@@ -31,20 +30,43 @@ def home_page(request):
             }
         )
 
-        # 3. Simple backend calculator rules to generate the estimate
-        if service_type == "Lawn Maintenance":
-            rate = Decimal('0.15')
-        elif service_type == "Landscaping Design":
-            rate = Decimal('0.50')
-        else:
-            rate = Decimal('0.25') # Property cleanup or others
+        calculated_total = Decimal('0.00')
+        summary_lines = []
 
-        calculated_total = sq_ft * rate
+        # 3. Run backend calculations for estimates.
+        if service_type == "Lawn Maintenance":
+            # Rule: Basic Cut is $35 up to 5000 sq ft, then $5 per 1000 sq ft over
+            if sq_ft <= 5000:
+                calculated_total += Decimal('35.00')
+            else:
+                over_sqft = sq_ft - 5000
+                intervals = math.ceil(over_sqft / 1000)
+                calculated_total += Decimal('35.00') + (Decimal(str(intervals)) * Decimal('5.00'))
+            summary_lines.append("Basic Cut (Mow/Blow)")
+
+            # Rule: Edging is a flat $10, plus $5 per 1000 sq ft over 5000
+            if include_edging:
+                calculated_total += Decimal('10.00')
+                if sq_ft > 5000:
+                    over_sqft = sq_ft - 5000
+                    intervals = math.ceil(over_sqft / 1000)
+                    calculated_total += Decimal(str(intervals)) * Decimal('5.00')
+                summary_lines.append("Professional Edging Add-on")
+
+
+        elif service_type == 'Weeding Maintenance':
+            # Rule: Weeding/Routine Gardening is $40 per hour
+            calculated_total += Decimal(str(weeding_hours)) * Decimal('40.00')
+            summary_lines.append(f"Weeding & Routine Gardening ({weeding_hours} Hours)")
+
+        # Combine items for service_type field in database entry
+        final_service_desc = " + ".join(summary_lines) if summary_lines else service_type
+
 
         # 4. Save the new quote directly into your business manager tables
         Quote.objects.create(
             customer = customer,
-            service_type = service_type,
+            service_type = final_service_desc,
             estimated_square_footage = sq_ft,
             notes = notes,
             estimated_total = calculated_total,
