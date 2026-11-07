@@ -1,11 +1,56 @@
 import datetime
+from django.urls import path
+from django.db.models import Sum
 from django.contrib import admin
 from django.contrib import messages
 from django.utils.crypto import get_random_string
 from .models import Customer, Quote, Invoice
 from unfold.admin import ModelAdmin
+from unfold.sites import UnfoldAdminSite
 
-# Register your models here.
+
+
+
+class RoonscapesAdminSite(UnfoldAdminSite):
+    """Custom Administrative Core Site configuration to safely inject operational metrics."""
+    
+    def index(self, request, extra_context=None):
+        if extra_context is None:
+            extra_context = {}
+
+        # 1. Execute direct database count math queries
+        pending_quotes_count = Quote.objects.filter(status='pending').count()
+        unpaid_invoices_count = Invoice.objects.filter(status='unpaid').count()
+        
+        # 2. Sum up totals safely with a zero fallback framework
+        unpaid_financials = Invoice.objects.filter(status='unpaid').aggregate(Sum('final_amount'))['final_amount__sum'] or 0
+
+        # 3. Explicitly build out the card array dictionary keys directly into the view layout context
+        extra_context["kpi_metrics"] = [
+            {
+                "title": "Pending Quote Requests",
+                "metric": pending_quotes_count,
+                "description": "Incoming client estimates requiring manual review.",
+            },
+            {
+                "title": "Outstanding Invoices",
+                "metric": unpaid_invoices_count,
+                "description": "Active bills currently waiting on client payment clearance.",
+            },
+            {
+                "title": "Unpaid Revenue Pipeline",
+                "metric": f"${unpaid_financials:,.2f}",
+                "description": "Total gross capital currently sitting out in the field.",
+            },
+        ]
+
+        # Call the parent class framework method to render the page cleanly
+        return super().index(request, extra_context=extra_context)
+
+# Global runtime assignment instance declaration override
+admin_site = RoonscapesAdminSite(name="admin")
+
+
 @admin.register(Customer)
 class CustomerAdmin(ModelAdmin):
     """Admin configuration for managing your client directory"""
@@ -82,3 +127,10 @@ class InvoiceAdmin(ModelAdmin):
             'classes': ('collapse',) # Hides section under a dropdown toggler
         }),
     ]
+
+
+
+# UPDATE THESE THREE LINES AT THE VERY BOTTOM
+admin_site.register(Customer, CustomerAdmin)
+admin_site.register(Quote, QuoteAdmin)
+admin_site.register(Invoice, InvoiceAdmin)

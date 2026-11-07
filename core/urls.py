@@ -16,8 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from business_manager.admin import admin_site
 
 urlpatterns = [
-    path('admin/', admin.site.urls), # Standard Django Admin
+    path('admin/', admin_site.urls), # Standard Django Admin
     path('', include('public_site.urls')) # Points to Roonscapes front page
 ]
