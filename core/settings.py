@@ -32,6 +32,11 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # unfold MUST sit at the top of the app stack list
+    'unfold',
+    'unfold.contrib.filters',
+
+    # native django apps
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -13,11 +13,21 @@ def home_page(request):
         phone = request.POST.get('phone')
         address = request.POST.get('address')
 
-        service_type = request.POST.get('address')
+        service_type = request.POST.get('service_type', 'Lawn Maintenance')
         sq_ft = request.POST.get('sq_ft', '0')
         include_edging = request.POST.get('include_edging') == 'yes'
         weeding_hours = int(request.POST.get('weeding_hours', 0))
         notes = request.POST.get('notes', '')
+
+        try:
+            sq_ft = int(sq_ft)
+        except (ValueError, TypeError):
+            sq_ft = 0
+
+        try:
+            weeding_hours = int(weeding_hours)
+        except (ValueError, TypeError):
+            weeding_hours = 0
 
 
         # 2. Get or create the customer profile using their email as a unique identifier.
