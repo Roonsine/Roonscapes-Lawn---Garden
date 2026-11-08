@@ -1,43 +1,43 @@
-{% extends "unfold/layouts/base_simple.html" %}
+{% extends "admin/base.html" %}
 {% load i18n unfold %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
 
 {% block content %}
 <div class="p-6 max-w-7xl mx-auto">
-    <!-- 1. Custom Brand Title Header Layout -->
     <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-6">
         Roonscapes Operations Overview
     </h1>
 
-    <!-- 2. Responsive Grid for Live Database Summary Data -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {% if kpi_metrics %}
-            {% for card in kpi_metrics %}
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col justify-between">
-                    <div>
-                        <h2 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-                            {{ card.title }}
-                        </h2>
-                        <!-- This injects the raw calculated metrics/numbers directly into the box frame -->
-                        <p class="text-4xl font-black text-gray-900 dark:text-white my-1">
-                            {{ card.metric }}
-                        </p>
-                    </div>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-4 border-t border-gray-100 dark:border-gray-700 pt-2">
-                        {{ card.description }}
-                    </p>
-                </div>
-            {% endfor %}
-        {% else %}
-            <!-- Fallback design placeholder card block in case context keys misalign -->
-            <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-xl col-span-3 text-sm text-yellow-800">
-                ⚠️ Pipeline connection established, but metrics arrays are not being sent correctly. Make sure you are using our custom admin site instance layout routing.
+        {% for item in kpi_metrics %}
+        <!-- CHANGED BACKGROUND TO bg-slate-900 AND BORDER TO MATCH -->
+        <div class="bg-slate-900 dark:bg-gray-800 p-6 rounded-2xl border border-slate-800 dark:border-gray-700 shadow-sm flex flex-col justify-between">
+            <div>
+                <!-- UPDATED TITLE COLOR TO BRIGHT GREY/GREEN FOR CONTRAST -->
+                <h2 class="text-xs font-bold text-emerald-400 dark:text-emerald-400 uppercase tracking-wider mb-2">
+                    {{ item.title }}
+                </h2>
+                <!-- UPDATED NUMBERS TO CRISP WHITE -->
+                <p class="text-4xl font-black text-white dark:text-white my-1">
+                    {{ item.metric }}
+                </p>
             </div>
-        {% endif %}
+            <!-- UPDATED DESCRIPTION COLOR AND DIVIDER TO ACCENT THE DARK BACKGROUND -->
+            <p class="text-xs text-slate-400 dark:text-gray-400 mt-4 border-t border-slate-800 dark:border-gray-700 pt-2">
+                {{ item.description }}
+            </p>
+        </div>
+        {% endfor %}
     </div>
 
-    <!-- 3. Renders your default lower system navigation links layout (Customers, Quotes, Invoices tables) -->
-    <div class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-6">
-        {{ block.super }}
+    <div class="flex flex-col lg:flex-row lg:gap-8">
+        <div class="grow">
+            {% include "unfold/helpers/app_list_default.html" %}
+        </div>
+        {% include "unfold/helpers/history.html" %}
     </div>
 </div>
 {% endblock %}
