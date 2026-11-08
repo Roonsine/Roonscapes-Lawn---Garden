@@ -49,6 +49,11 @@ INSTALLED_APPS = [
     'business_manager'
 ]
 
+# Configure Unfold UI Dashboard Context Pipelines
+UNFOLD = {
+    "DASHBOARD_CALLBACK": "business_manager.admin.dashboard_callback",
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

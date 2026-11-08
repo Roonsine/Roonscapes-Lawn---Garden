@@ -1,64 +1,22 @@
 import datetime
-from django.urls import path
 from django.db.models import Sum
 from django.contrib import admin
 from django.contrib import messages
-from django.utils.crypto import get_random_string
 from .models import Customer, Quote, Invoice
 from unfold.admin import ModelAdmin
 from unfold.sites import UnfoldAdminSite
 
 
+admin_site = UnfoldAdminSite(name="admin")
 
 
-class RoonscapesAdminSite(UnfoldAdminSite):
-    """Custom Administrative Core Site configuration to safely inject operational metrics."""
-    
-    def index(self, request, extra_context=None):
-        if extra_context is None:
-            extra_context = {}
-
-        # 1. Execute direct database count math queries
-        pending_quotes_count = Quote.objects.filter(status='pending').count()
-        unpaid_invoices_count = Invoice.objects.filter(status='unpaid').count()
-        
-        # 2. Sum up totals safely with a zero fallback framework
-        unpaid_financials = Invoice.objects.filter(status='unpaid').aggregate(Sum('final_amount'))['final_amount__sum'] or 0
-
-        # 3. Explicitly build out the card array dictionary keys directly into the view layout context
-        extra_context["kpi_metrics"] = [
-            {
-                "title": "Pending Quote Requests",
-                "metric": pending_quotes_count,
-                "description": "Incoming client estimates requiring manual review.",
-            },
-            {
-                "title": "Outstanding Invoices",
-                "metric": unpaid_invoices_count,
-                "description": "Active bills currently waiting on client payment clearance.",
-            },
-            {
-                "title": "Unpaid Revenue Pipeline",
-                "metric": f"${unpaid_financials:,.2f}",
-                "description": "Total gross capital currently sitting out in the field.",
-            },
-        ]
-
-        # Call the parent class framework method to render the page cleanly
-        return super().index(request, extra_context=extra_context)
-
-# Global runtime assignment instance declaration override
-admin_site = RoonscapesAdminSite(name="admin")
-
-
-@admin.register(Customer)
 class CustomerAdmin(ModelAdmin):
     """Admin configuration for managing your client directory"""
     list_display = ('name', 'email', 'phone', 'created_at')
     search_fields = ('name', 'email', 'phone', 'address')
     list_per_page = 25
 
-@admin.register(Quote)
+
 class QuoteAdmin(ModelAdmin):
     """Admin configuration for viewing and processing customer quotes."""
     list_display = ('id', 'customer', 'service_type', 'estimated_square_footage', 'estimated_total', 'status', 'created_at')
@@ -105,7 +63,7 @@ class QuoteAdmin(ModelAdmin):
             )
 
 
-@admin.register(Invoice)
+
 class InvoiceAdmin(ModelAdmin):
     """Admin configuration for processing bills, tracking payments, and auditing revenue."""
     list_display = ('invoice_number', 'customer', 'final_amount', 'status', 'due_date', 'issue_date')
@@ -134,3 +92,37 @@ class InvoiceAdmin(ModelAdmin):
 admin_site.register(Customer, CustomerAdmin)
 admin_site.register(Quote, QuoteAdmin)
 admin_site.register(Invoice, InvoiceAdmin)
+
+
+def dashboard_callback(request, context):
+    """
+    Native hook executed by Unfold to reliably append custom metrics
+    directly into the templates/admin/index.html view layer.
+    """
+    # 1. Fetch real-time row calculations
+    pending_quotes_count = Quote.objects.filter(status='pending').count()
+    unpaid_invoices_count = Invoice.objects.filter(status='unpaid').count()
+    unpaid_financials = Invoice.objects.filter(status='unpaid').aggregate(Sum('final_amount'))['final_amount__sum'] or 0
+
+    # 2. Safely merge variables directly into Unfold's master template context dictionary
+    context.update({
+        "kpi_metrics": [
+            {
+                "title": "Pending Quote Requests",
+                "metric": pending_quotes_count,
+                "description": "Incoming client estimates requiring manual review.",
+            },
+            {
+                "title": "Outstanding Invoices",
+                "metric": unpaid_invoices_count,
+                "description": "Active bills currently waiting on client payment clearance.",
+            },
+            {
+                "title": "Unpaid Revenue Pipeline",
+                "metric": f"${unpaid_financials:,.2f}",
+                "description": "Total gross capital currently sitting out in the field.",
+            },
+        ]
+    })
+
+    return context
