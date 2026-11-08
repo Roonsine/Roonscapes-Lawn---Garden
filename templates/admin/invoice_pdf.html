@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Invoice {{ invoice.invoice_number }}</title>
+    <style>
+        /* Mimicking Spreadsheet Typography & Layout */
+        body { 
+            font-family: 'Arial', 'Segoe UI', sans-serif; 
+            color: #1e293b; 
+            margin: 0; 
+            padding: 24px;
+            background-color: #ffffff;
+        }
+
+        /* Master Grid Container */
+        .sheet-container {
+            width: 100%;
+        }
+
+        /* Top Header Branding Banner */
+        .company-header {
+            width: 100%;
+            background-color: #065f46; /* Deep green brand accent */
+            color: #ffffff;
+            padding: 16px;
+            border-bottom: 3px solid #047857;
+        }
+        .company-title {
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        .company-subtitle {
+            font-size: 12px;
+            color: #a7f3d0;
+            margin-top: 2px;
+        }
+
+        /* Metadata Block */
+        .meta-section {
+            width: 100%;
+            margin-top: 20px;
+            margin-bottom: 25px;
+        }
+        .meta-cell {
+            vertical-align: top;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        /* The Spreadsheet Ledger Table Grid */
+        .grid-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        /* Column Header Cells */
+        .grid-table th {
+            background-color: #f1f5f9; /* Light grey spreadsheet header row */
+            border: 1px solid #cbd5e1;  /* Classic cell border line */
+            color: #334155;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        /* Standard Data Cells */
+        .grid-table td {
+            border: 1px solid #e2e8f0; /* Soft gridline */
+            padding: 10px 12px;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        /* Right Aligned Calculation Fields */
+        .text-right {
+            text-align: right;
+        }
+        .bg-summary {
+            background-color: #f8fafc;
+            font-weight: bold;
+        }
+        .final-total {
+            background-color: #ecfdf5; /* Highlighted total row background */
+            color: #065f46;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        /* Print Instructions Footer */
+        .sheet-footer {
+            margin-top: 40px;
+            border-top: 2px dashed #e2e8f0;
+            padding-top: 15px;
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sheet-container">
+        
+        <!-- 1. Google Sheets Header Style Banner -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+                <td class="company-header">
+                    <div class="company-title">Roonscapes Lawn & Garden</div>
+                    <div class="company-subtitle">Professional Property Maintenance &bull; Chatham-Kent, ON</div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- 2. Client & Metadata Info Blocks -->
+        <table class="meta-section">
+            <tr>
+                <td class="meta-cell" style="width: 55%;">
+                    <strong style="color: #475569; font-size: 11px; text-transform: uppercase;">Customer Profile:</strong>
+                    <div style="font-size: 15px; font-weight: bold; margin-top: 4px; color: #0f172a;">{{ invoice.customer.name }}</div>
+                    <div style="color: #475569;">{{ invoice.customer.email }}</div>
+                    {% if invoice.customer.phone %}<div style="color: #475569;">{{ invoice.customer.phone }}</div>{% endif %}
+                    {% if invoice.customer.address %}<div style="margin-top: 4px; font-style: italic; color: #334155;">📍 {{ invoice.customer.address }}</div>{% endif %}
+                </td>
+                <td class="meta-cell text-right" style="width: 45%;">
+                    <strong style="color: #475569; font-size: 11px; text-transform: uppercase;">Billing Terms:</strong>
+                    <div style="font-size: 16px; font-weight: bold; color: #065f46; margin-top: 4px;">{{ invoice.invoice_number }}</div>
+                    <div style="margin-top: 4px;"><strong>Date Issued:</strong> {{ invoice.issue_date }}</div>
+                    <div><strong>Due Date:</strong> {{ invoice.due_date }}</div>
+                    <div><strong>Status:</strong> <span style="color: #b91c1c; font-weight: bold;">{{ invoice.get_status_display }}</span></div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- 3. Dynamic Cell Itemization Grid Matrix -->
+        <table class="grid-table">
+            <thead>
+                <tr>
+                    <th>Description of Service Provided</th>
+                    <th style="width: 150px;" class="text-right">Measured Metric</th>
+                    <th style="width: 150px;" class="text-right">Line Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <strong>
+                            {% if invoice.originating_quote %}
+                                {{ invoice.originating_quote.service_type }}
+                            {% else %}
+                                Custom Groundskeeping Assignment
+                            {% endif %}
+                        </strong>
+                    </td>
+                    <td class="text-right text-slate-500">
+                        {% if invoice.originating_quote and invoice.originating_quote.estimated_square_footage %}
+                            {{ invoice.originating_quote.estimated_square_footage|floatformat:0 }} Sq Ft
+                        {% else %}
+                            Flat Rate Service
+                        {% endif %}
+                    </td>
+                    <td class="text-right" style="font-weight: bold;">${{ invoice.final_amount|floatformat:2 }}</td>
+                </tr>
+
+                <!-- Summary Row Blocs -->
+                <tr>
+                    <td colspan="2" class="text-right bg-summary">Subtotal:</td>
+                    <td class="text-right bg-summary">${{ invoice.final_amount|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="text-right final-total">Total Balance Due (CAD):</td>
+                    <td class="text-right final-total">${{ invoice.final_amount|floatformat:2 }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- 4. Operational Payment Remittance Rules Footer -->
+        <div class="sheet-footer">
+            Thank you for your business! Please review the automated ledger details above.<br>
+            <span style="font-weight: bold; color: #334155;">
+                Remit Payment via Interac e-Transfer to: billing@roonscapeslawngarden.com
+            </span>
+        </div>
+
+    </div>
+
+</body>
+</html>

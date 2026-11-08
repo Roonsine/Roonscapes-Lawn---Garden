@@ -12,19 +12,27 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env = environ.Env(
+    # set the values and cast types automatically
+    DEBUG=(bool, False)
+)
+
+# Read the local environment variables file if it exists safely
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-oju*p@#2c4u8qehth!=+7r7v87*@zp4gx54s*k^bef0rxvf*y@'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = []
 
@@ -121,11 +129,32 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Toronto'
 
 USE_I18N = True
 
 USE_TZ = True
+
+# =========================================================================
+# PRODUCTION EMAIL ENGINE: GOOGLE WORKSPACE SMTP OVERRIDES
+# =========================================================================
+
+# 1. Switch backend from local console to live network transmission delivery
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# 2. Hook into Google's standard mail routing relay gateway
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+# 3. Securely bind your authentic business account details
+EMAIL_HOST_USER = env('EMAIL_USER')  # <-- Replace with your real business address
+
+# 4. PLUG IN THE 16-DIGIT APP PASSWORD GENERATED IN STEP 1 (NO SPACES)
+EMAIL_HOST_PASSWORD = env('EMAIL_PASS')           # <-- Replace with your generated app password
+
+# 5. Set the visible sender tag information displayed in the customer's inbox
+DEFAULT_FROM_EMAIL = 'Roonscapes Lawn & Garden <{EMAIL_HOST_USER}>'
 
 
 # Static files (CSS, JavaScript, Images)
