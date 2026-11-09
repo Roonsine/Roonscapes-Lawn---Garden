@@ -53,12 +53,30 @@ class Invoice(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        if not self.invoice_number:
-            unique_suffix = uuid.uuid4().hex[:8].upper()
-            self.invoice_number = f"INV-{unique_suffix}"
-        if not self.due_date:
-            self.due_date = datetime.date.today() + datetime.timedelta(days=14)
-        super().save(*args, **kwargs)
+            """Automatically assigns sequential invoice numbers incrementing by 1 (e.g., INV-1001)."""
+            if not self.invoice_number:
+                # 1. Look up the absolute latest created invoice row in the database
+                latest_invoice = Invoice.objects.order_by('-id').first()
+                
+                if latest_invoice and latest_invoice.invoice_number:
+                    try:
+                        # 2. Extract the numeric string part sitting right after 'INV-'
+                        # For example: if latest was 'INV-1005', this grabs '1005'
+                        number_part = latest_invoice.invoice_number.split('-')[1]
+                        next_number = int(number_part) + 1
+                    except (IndexError, ValueError):
+                        # Fallback protection in case an old test row has a random string format
+                        next_number = 1001
+                else:
+                    # 3. Starting baseline integer index point for your business tracking
+                    next_number = 1001
+                    
+                self.invoice_number = f"INV-{next_number}"
+                
+            if not self.due_date:
+                self.due_date = datetime.date.today() + datetime.timedelta(days=14)
+                
+            super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.invoice_number} - {self.customer.name} (${self.final_amount})"

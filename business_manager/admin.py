@@ -93,18 +93,38 @@ admin.site.register(Quote, QuoteAdmin)
 admin.site.register(Invoice, InvoiceAdmin)
 
 
-# ========================================================
-# 3. NATIVE UNFOLD DASHBOARD CALLBACK HOOK
-# ========================================================
 def dashboard_callback(request, context):
     """
     Native hook executed globally by Unfold to pass your database
     numbers directly into the templates/admin/index.html view layer.
     """
-    context['pending_quotes_count'] = Quote.objects.filter(status='pending').count()
-    context['unpaid_invoices_count'] = Invoice.objects.filter(status='unpaid').count()
+    # 1. Fetch real-time row calculations from the database
+    pending_quotes_count = Quote.objects.filter(status='pending').count()
+    unpaid_invoices_count = Invoice.objects.filter(status='unpaid').count()
     
+    # 2. Sum your unpaid financials safely with a fallback default of 0
     raw_revenue = Invoice.objects.filter(status='unpaid').aggregate(Sum('final_amount'))['final_amount__sum'] or 0
-    context['unpaid_financials'] = f"${raw_revenue:,.2f}"
+    unpaid_financials = f"${raw_revenue:,.2f}"
+    
+    # 3. CRITICAL INTERNALS CONNECT: Map these directly into a dictionary loop list for your index template
+    context.update({
+        "kpi_metrics": [
+            {
+                "title": "Pending Quote Requests",
+                "metric": pending_quotes_count,
+                "description": "Incoming client estimates requiring manual review.",
+            },
+            {
+                "title": "Outstanding Invoices",
+                "metric": unpaid_invoices_count,
+                "description": "Active bills currently waiting on client payment clearance.",
+            },
+            {
+                "title": "Unpaid Revenue Pipeline",
+                "metric": unpaid_financials,
+                "description": "Total gross capital currently sitting out in the field.",
+            },
+        ]
+    })
     
     return context
