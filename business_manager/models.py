@@ -52,6 +52,10 @@ class Invoice(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unpaid')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Tracking fields for pdf management
+    pdf_generated = models.BooleanField(default=False, verbose_name="PDF Generated")
+    pdf_emailed = models.BooleanField(default=False, verbose_name="Emailed to Client")
+
     def save(self, *args, **kwargs):
             """Automatically assigns sequential invoice numbers incrementing by 1 (e.g., INV-1001)."""
             if not self.invoice_number:
@@ -177,3 +181,7 @@ class Invoice(models.Model):
         filename = f"Invoice_{self.invoice_number}.pdf"
         email.attach(filename, pdf_data, 'application/pdf')
         email.send(fail_silently=False)
+
+        self.pdf_generated = True
+        self.pdf_emailed = True
+        self.save()

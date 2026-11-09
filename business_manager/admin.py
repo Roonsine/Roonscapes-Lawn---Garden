@@ -3,6 +3,8 @@ from django.contrib import admin
 from django.contrib import messages
 from django.db.models import Sum
 from unfold.admin import ModelAdmin
+from django.urls import reverse
+from django.utils.html import format_html
 
 # Import your database tables directly from models.py
 from .models import Customer, Quote, Invoice
@@ -51,14 +53,24 @@ class QuoteAdmin(ModelAdmin):
 
 
 class InvoiceAdmin(ModelAdmin):
-    list_display = ('invoice_number', 'customer', 'final_amount', 'status', 'due_date', 'issue_date')
-    list_filter = ('status', 'due_date', 'issue_date')
+    list_display = ('invoice_number', 'customer', 'final_amount', 'status', 'pdf_generated', 'pdf_emailed', 'download_pdf_button', 'due_date')
+    list_filter = ('status', 'pdf_generated', 'pdf_emailed', 'due_date')
     search_fields = ('invoice_number', 'customer__name', 'customer__email')
     readonly_fields = ('invoice_number', 'issue_date', 'created_at')
     ordering = ('-issue_date',)
     
-    # Dropdown menu action shortcut to trigger emails
     actions = ['email_selected_invoices']
+
+
+    def download_pdf_button(self, obj):
+            """Generates a styled, clickable down-arrow button right inside the table row grid."""
+            download_url = reverse('download_invoice_pdf', args=[obj.id])
+            return format_html(
+                '<a href="{}" class="bg-slate-800 text-white hover:bg-slate-700 font-bold py-1 px-3 rounded text-xs transition-colors inline-block">⬇️ Download PDF</a>',
+                download_url
+            )
+    download_pdf_button.short_description = "Actions" # Table column header text title
+
 
     @admin.action(description="Email selected invoices to customers")
     def email_selected_invoices(self, request, queryset):
