@@ -17,9 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from business_manager import views as manager_views
+from django.contrib.auth.decorators import login_required
 
 urlpatterns = [
-    path('admin/invoice/<int:invoice_id>/download/', manager_views.download_invoice_pdf, name='download_invoice_pdf'),
+    path('admin/invoice/<int:invoice_id>/download/', login_required(manager_views.download_invoice_pdf), name='download_invoice_pdf'),
     path('admin/', admin.site.urls), # Standard Django Admin
     path('', include('public_site.urls')) # Points to Roonscapes front page
 ]
