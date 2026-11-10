@@ -67,84 +67,86 @@
             </div>
         </div>
     </section>
-<!-- Place your existing Roonscapes navbar/hero sections up here -->
-<section id="quote-section" class="max-w-xl mx-auto my-12 bg-white p-8 rounded-lg shadow-md border border-gray-200">
-    <h2 class="text-3xl font-bold text-gray-800 mb-2">Request an Instant Quote</h2>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="mb-4 p-4 text-green-800 bg-green-100 rounded-md font-medium">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-
-    <form method="POST" action="{% url 'home' %}">
-        {% csrf_token %}
-        
-        <!-- Contact Inputs -->
-        <div class="mb-4">
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
-            <input type="text" name="name" required class="w-full p-2.5 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none">
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Email</label>
-                <input type="email" name="email" required class="w-full p-2.5 border border-gray-300 rounded">
+<section id="contact" class="quote-section">
+    <div class="container">
+        <div class="quote-card">
+            <div class="quote-heading">
+                <p class="quote-kicker">Roonscapes Lawn &amp; Garden</p>
+                <h2>Request an Instant Quote</h2>
+                <p>Share a few details about your property and the service you need. We’ll follow up about your estimate.</p>
             </div>
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Phone</label>
-                <input type="text" name="phone" class="w-full p-2.5 border border-gray-300 rounded">
-            </div>
-        </div>
-        <div class="mb-4">
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Service Address</label>
-            <input type="text" name="address" required class="w-full p-2.5 border border-gray-300 rounded">
-        </div>
 
-        <!-- Service Core Category -->
-        <div class="mb-4">
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Select Core Service</label>
-            <select id="service_type" name="service_type" class="w-full p-2.5 border border-gray-300 rounded bg-white">
-                <option value="Lawn Maintenance">Basic Cut (Mow & Blow)</option>
-                <option value="Weeding Maintenance">Weeding & Routine Gardening Maintenance</option>
-            </select>
-        </div>
+            {% if messages %}
+                <div class="quote-messages">
+                    {% for message in messages %}
+                        <div class="quote-message">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
 
-        <!-- Dynamic Group 1: Lawn Parameters (Visible only when Lawn Maintenance is selected) -->
-        <div id="lawn_group" class="block">
-            <div class="mb-4">
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Estimated Lawn Size (Square Footage)</label>
-                <input type="number" id="sq_ft" name="sq_ft" value="1000" min="0" step="100" class="w-full p-2.5 border border-gray-300 rounded">
-            </div>
-            <div class="mb-4 flex items-center gap-2">
-                <input type="checkbox" id="include_edging" name="include_edging" value="yes" class="w-4 h-4 text-green-600 border-gray-300 rounded">
-                <label for="include_edging" class="text-sm font-medium text-gray-700">Include Professional Edging (+$10 flat base rate)</label>
-            </div>
-        </div>
+            <form method="POST" action="{% url 'home' %}" class="quote-form">
+                {% csrf_token %}
 
-        <!-- Dynamic Group 2: Gardening Parameters (Visible only when Weeding is selected) -->
-        <div id="gardening_group" class="hidden">
-            <div class="mb-4">
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Estimated Maintenance Time (Hours)</label>
-                <input type="number" id="weeding_hours" name="weeding_hours" value="1" min="1" class="w-full p-2.5 border border-gray-300 rounded">
-                <p class="text-xs text-gray-500 mt-1">Billed at $40.00/hour</p>
-            </div>
-        </div>
+                <div class="quote-fields">
+                    <div class="quote-field">
+                        <label for="quote_name">Full Name</label>
+                        <input type="text" id="quote_name" name="name" required>
+                    </div>
+                    <div class="quote-field">
+                        <label for="quote_email">Email</label>
+                        <input type="email" id="quote_email" name="email" required>
+                    </div>
+                    <div class="quote-field">
+                        <label for="quote_phone">Phone</label>
+                        <input type="text" id="quote_phone" name="phone">
+                    </div>
+                    <div class="quote-field">
+                        <label for="quote_address">Service Address</label>
+                        <input type="text" id="quote_address" name="address" required>
+                    </div>
+                </div>
 
-        <div class="mb-6">
-            <label class="block text-sm font-semibold text-gray-700 mb-1">Special Notes / Access Information</label>
-            <textarea name="notes" rows="3" class="w-full p-2.5 border border-gray-300 rounded"></textarea>
-        </div>
+                <div class="quote-field">
+                    <label for="service_type">Select Core Service</label>
+                    <select id="service_type" name="service_type">
+                        <option value="Lawn Maintenance">Basic Cut (Mow &amp; Blow)</option>
+                        <option value="Weeding Maintenance">Weeding &amp; Routine Gardening Maintenance</option>
+                    </select>
+                </div>
 
-        <!-- Price Display Box -->
-        <div class="bg-gray-50 border border-gray-200 p-4 rounded-md mb-6 flex justify-between items-center">
-            <span class="text-sm font-medium text-gray-600">Calculated Estimate Preview:</span>
-            <span id="live_price_display" class="text-xl font-bold text-green-600">$35.00</span>
-        </div>
+                <div id="lawn_group" class="quote-service-fields">
+                    <div class="quote-field">
+                        <label for="sq_ft">Estimated Lawn Size (Square Footage)</label>
+                        <input type="number" id="sq_ft" name="sq_ft" value="1000" min="0" step="100">
+                    </div>
+                    <label for="include_edging" class="quote-checkbox">
+                        <input type="checkbox" id="include_edging" name="include_edging" value="yes">
+                        <span>Include Professional Edging (+$10 flat base rate)</span>
+                    </label>
+                </div>
 
-        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition-colors shadow">
-            Submit Quote
-        </button>
-    </form>
+                <div id="gardening_group" class="quote-service-fields quote-hidden">
+                    <div class="quote-field">
+                        <label for="weeding_hours">Estimated Maintenance Time (Hours)</label>
+                        <input type="number" id="weeding_hours" name="weeding_hours" value="1" min="1">
+                        <small>Billed at $40.00/hour</small>
+                    </div>
+                </div>
+
+                <div class="quote-field">
+                    <label for="quote_notes">Special Notes / Access Information</label>
+                    <textarea id="quote_notes" name="notes" rows="4"></textarea>
+                </div>
+
+                <div class="quote-price" aria-live="polite">
+                    <span>Calculated Estimate Preview</span>
+                    <strong id="live_price_display">$35.00</strong>
+                </div>
+
+                <button type="submit" class="quote-submit">Submit Quote</button>
+            </form>
+        </div>
+    </div>
 </section>
 
 <!-- Dynamic Form Toggling and Live Calculation Script -->
@@ -199,6 +201,7 @@
     sqFtInput.addEventListener('input', updateFormFieldsAndCalculate);
     edgingCheckbox.addEventListener('change', updateFormFieldsAndCalculate);
     hoursInput.addEventListener('input', updateFormFieldsAndCalculate);
+    updateFormFieldsAndCalculate();
 </script>
 
 

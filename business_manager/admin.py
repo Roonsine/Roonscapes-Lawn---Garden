@@ -1,13 +1,19 @@
+import mimetypes
 import datetime
 from django.contrib import admin
 from django.contrib import messages
+from django.http import FileResponse, HttpResponseNotAllowed, HttpResponseNotFound, JsonResponse
 from django.db.models import Sum
+from django.shortcuts import get_object_or_404
+from django.urls import path
 from unfold.admin import ModelAdmin
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils import timezone
 
 # Import your database tables directly from models.py
-from .models import Customer, Quote, Invoice
+from .models import Customer, Quote, Invoice, Transaction
+from .receipt_ocr import OCRUnavailable, ReceiptOCRError, extract_receipt_image
 
 # ========================================================
 # 1. MODEL DASHBOARDS & AUTOMATION UTILITIES
@@ -53,7 +59,7 @@ class QuoteAdmin(ModelAdmin):
 
 
 class InvoiceAdmin(ModelAdmin):
-    list_display = ('invoice_number', 'customer', 'final_amount', 'status', 'pdf_generated', 'pdf_emailed', 'download_pdf_button', 'due_date')
+    list_display = ('invoice_number', 'customer', 'final_amount', 'status', 'paid_date', 'pdf_generated', 'pdf_emailed', 'download_pdf_button', 'due_date')
     list_filter = ('status', 'pdf_generated', 'pdf_emailed', 'due_date')
     search_fields = ('invoice_number', 'customer__name', 'customer__email')
     readonly_fields = ('invoice_number', 'issue_date', 'created_at')
@@ -84,9 +90,86 @@ class InvoiceAdmin(ModelAdmin):
 
     fieldsets = [
         ('Core Parameters', {'fields': ('invoice_number', 'customer', 'originating_quote')}),
-        ('Financial Terms', {'fields': ('final_amount', 'status', 'due_date')}),
+        ('Financial Terms', {'fields': ('final_amount', 'status', 'paid_date', 'due_date')}),
         ('System Timestamps', {'fields': ('issue_date', 'created_at'), 'classes': ('collapse',)}),
     ]
+
+
+class TransactionAdmin(ModelAdmin):
+    change_form_template = 'admin/business_manager/transaction/change_form.html'
+    list_display = ('date', 'transaction_type', 'merchant', 'category', 'description', 'amount', 'tax_amount', 'receipt_link')
+    list_filter = ('transaction_type', 'category', 'date')
+    search_fields = ('merchant', 'category', 'description')
+    ordering = ('-date', '-created_at')
+    date_hierarchy = 'date'
+    readonly_fields = ('source_invoice', 'created_at', 'receipt_preview')
+    fieldsets = [
+        ('Transaction details', {
+            'fields': ('transaction_type', 'date', 'merchant', 'category', 'description'),
+        }),
+        ('Amounts', {'fields': ('subtotal', 'tax_amount', 'amount')}),
+        ('Receipt', {
+            'fields': ('receipt', 'receipt_preview'),
+            'description': 'Upload a clear receipt photo, then use Read receipt to fill suggested values. Review them before saving.',
+        }),
+        ('Invoice link', {'fields': ('source_invoice', 'created_at')}),
+    ]
+
+    class Media:
+        js = ('business_manager/receipt_ocr.js',)
+
+    def get_urls(self):
+        custom_urls = [
+            path(
+                'receipt-ocr/',
+                self.admin_site.admin_view(self.receipt_ocr_view),
+                name='business_manager_transaction_receipt_ocr',
+            ),
+            path(
+                'receipt-file/<path:receipt_name>/',
+                self.admin_site.admin_view(self.receipt_file_view),
+                name='business_manager_transaction_receipt_file',
+            ),
+        ]
+        return custom_urls + super().get_urls()
+
+    def receipt_file_view(self, request, receipt_name):
+        transaction = get_object_or_404(
+            self.get_queryset(request),
+            receipt=receipt_name,
+        )
+        if not transaction.receipt:
+            return HttpResponseNotFound('No receipt image is attached to this entry.')
+        content_type = mimetypes.guess_type(transaction.receipt.name)[0] or 'application/octet-stream'
+        return FileResponse(transaction.receipt.open('rb'), content_type=content_type)
+
+    def receipt_ocr_view(self, request):
+        if request.method != 'POST':
+            return HttpResponseNotAllowed(['POST'])
+
+        receipt = request.FILES.get('receipt')
+        if receipt is None:
+            return JsonResponse({'error': 'Choose a receipt image first.'}, status=400)
+
+        try:
+            suggested_fields = extract_receipt_image(receipt)
+        except OCRUnavailable as exc:
+            return JsonResponse({'error': str(exc)}, status=503)
+        except ReceiptOCRError as exc:
+            return JsonResponse({'error': str(exc)}, status=422)
+
+        return JsonResponse({'fields': suggested_fields})
+
+    @admin.display(description='Receipt')
+    def receipt_link(self, obj):
+        if not obj or not obj.receipt:
+            return '—'
+        url = obj.receipt.url
+        return format_html('<a href="{}">View receipt</a>', url)
+
+    @admin.display(description='Uploaded receipt')
+    def receipt_preview(self, obj):
+        return self.receipt_link(obj)
 
 
 # ========================================================
@@ -103,6 +186,7 @@ except admin.sites.NotRegistered:
 admin.site.register(Customer, CustomerAdmin)
 admin.site.register(Quote, QuoteAdmin)
 admin.site.register(Invoice, InvoiceAdmin)
+admin.site.register(Transaction, TransactionAdmin)
 
 
 def dashboard_callback(request, context):
@@ -117,7 +201,18 @@ def dashboard_callback(request, context):
     # 2. Sum your unpaid financials safely with a fallback default of 0
     raw_revenue = Invoice.objects.filter(status='unpaid').aggregate(Sum('final_amount'))['final_amount__sum'] or 0
     unpaid_financials = f"${raw_revenue:,.2f}"
-    
+
+    today = timezone.localdate()
+    month_start = today.replace(day=1)
+    month_transactions = Transaction.objects.filter(date__gte=month_start, date__lte=today)
+    monthly_income = month_transactions.filter(transaction_type='income').aggregate(
+        total=Sum('amount')
+    )['total'] or 0
+    monthly_expenses = month_transactions.filter(transaction_type='expense').aggregate(
+        total=Sum('amount')
+    )['total'] or 0
+    monthly_net = monthly_income - monthly_expenses
+
     # 3. CRITICAL INTERNALS CONNECT: Map these directly into a dictionary loop list for your index template
     context.update({
         "kpi_metrics": [
@@ -137,6 +232,26 @@ def dashboard_callback(request, context):
                 "description": "Total gross capital currently sitting out in the field.",
             },
         ]
+        + [
+            {
+                "title": "Income This Month",
+                "metric": f"${monthly_income:,.2f}",
+                "description": "Payments and other income recorded this month.",
+            },
+            {
+                "title": "Expenses This Month",
+                "metric": f"${monthly_expenses:,.2f}",
+                "description": "Business expenses recorded this month.",
+            },
+            {
+                "title": "Net This Month",
+                "metric": f"${monthly_net:,.2f}",
+                "description": "Recorded income minus recorded expenses this month.",
+            },
+        ],
+        "recent_transactions": Transaction.objects.all()[:5],
+        "transaction_add_url": reverse('admin:business_manager_transaction_add'),
+        "transaction_list_url": reverse('admin:business_manager_transaction_changelist'),
     })
     
     return context

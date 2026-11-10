@@ -7,31 +7,85 @@
 
 {% block content %}
 <div class="p-6 max-w-7xl mx-auto">
-    <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-6">
-        Roonscapes Operations Overview
-    </h1>
+    <div class="mb-8">
+        <p class="text-sm font-semibold uppercase tracking-widest text-emerald-700 dark:text-emerald-400 mb-2">
+            Roonscapes Lawn &amp; Garden
+        </p>
+        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white">
+            Business Dashboard
+        </h1>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            A quick overview of customer requests and financial activity.
+        </p>
+    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
         {% for item in kpi_metrics %}
-        <!-- CHANGED BACKGROUND TO bg-slate-900 AND BORDER TO MATCH -->
-        <div class="bg-slate-900 dark:bg-gray-800 p-6 rounded-2xl border border-slate-800 dark:border-gray-700 shadow-sm flex flex-col justify-between">
+        <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 border-l-4 border-l-emerald-500 shadow-sm flex flex-col justify-between">
             <div>
-                <!-- UPDATED TITLE COLOR TO BRIGHT GREY/GREEN FOR CONTRAST -->
-                <h2 class="text-xs font-bold text-emerald-400 dark:text-emerald-400 uppercase tracking-wider mb-2">
+                <h2 class="text-xs font-bold text-emerald-300 uppercase tracking-wider mb-3">
                     {{ item.title }}
                 </h2>
-                <!-- UPDATED NUMBERS TO CRISP WHITE -->
-                <p class="text-4xl font-black text-white dark:text-white my-1">
+                <p class="text-4xl font-black text-white my-1">
                     {{ item.metric }}
                 </p>
             </div>
-            <!-- UPDATED DESCRIPTION COLOR AND DIVIDER TO ACCENT THE DARK BACKGROUND -->
-            <p class="text-xs text-slate-400 dark:text-gray-400 mt-4 border-t border-slate-800 dark:border-gray-700 pt-2">
+            <p class="text-sm text-slate-300 mt-4 border-t border-slate-700 pt-3">
                 {{ item.description }}
             </p>
         </div>
         {% endfor %}
     </div>
+
+    <section class="bg-slate-800 rounded-xl border border-slate-700 shadow-sm mb-8 overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 border-b border-slate-700">
+            <div>
+                <h2 class="text-lg font-bold text-white">Recent Income &amp; Expenses</h2>
+                <p class="text-sm text-slate-300 mt-1">Receipt-based expenses and income from paid invoices.</p>
+            </div>
+            <div class="flex gap-4 text-sm font-semibold">
+                <a href="{{ transaction_add_url }}" class="text-emerald-300 hover:text-emerald-200">Add entry</a>
+                <a href="{{ transaction_list_url }}" class="text-emerald-300 hover:text-emerald-200">View all</a>
+            </div>
+        </div>
+
+        {% if recent_transactions %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="text-xs uppercase tracking-wide text-slate-300 bg-slate-900">
+                    <tr>
+                        <th scope="col" class="px-5 py-3">Date</th>
+                        <th scope="col" class="px-5 py-3">Type</th>
+                        <th scope="col" class="px-5 py-3">Merchant</th>
+                        <th scope="col" class="px-5 py-3">Category</th>
+                        <th scope="col" class="px-5 py-3">Items / Description</th>
+                        <th scope="col" class="px-5 py-3 text-right">Subtotal</th>
+                        <th scope="col" class="px-5 py-3 text-right">Tax</th>
+                        <th scope="col" class="px-5 py-3 text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700">
+                    {% for entry in recent_transactions %}
+                    <tr class="text-slate-100">
+                        <td class="px-5 py-3 whitespace-nowrap">{{ entry.date|date:"M j, Y" }}</td>
+                        <td class="px-5 py-3">{{ entry.get_transaction_type_display }}</td>
+                        <td class="px-5 py-3">{{ entry.merchant|default:"—" }}</td>
+                        <td class="px-5 py-3">{{ entry.category }}</td>
+                        <td class="px-5 py-3">{{ entry.description|default:"—" }}</td>
+                        <td class="px-5 py-3 text-right whitespace-nowrap">
+                            {% if entry.subtotal is not None %}${{ entry.subtotal|floatformat:2 }}{% else %}—{% endif %}
+                        </td>
+                        <td class="px-5 py-3 text-right whitespace-nowrap">${{ entry.tax_amount|floatformat:2 }}</td>
+                        <td class="px-5 py-3 text-right whitespace-nowrap font-semibold">${{ entry.amount|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="p-5 text-sm text-slate-300">No entries yet. Add your first income or expense to start tracking cash flow.</p>
+        {% endif %}
+    </section>
 
     <div class="flex flex-col lg:flex-row lg:gap-8">
         <div class="grow">

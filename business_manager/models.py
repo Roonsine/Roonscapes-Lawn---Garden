@@ -4,9 +4,32 @@ import io
 import math
 from decimal import Decimal
 from django.db import models
+from django.core.validators import FileExtensionValidator, MinValueValidator
 from django.core.mail import EmailMessage
+from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
+from django.utils import timezone
+from django.utils.deconstruct import deconstructible
+
+from .storage import PrivateReceiptStorage
+
+
+@deconstructible
+class ReceiptSizeValidator:
+    limit = 10 * 1024 * 1024
+
+    def __call__(self, value):
+        if value.size > self.limit:
+            raise ValidationError("Receipt images must be 10 MB or smaller.")
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__)
+
+
+def receipt_upload_path(instance, filename):
+    extension = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'jpg'
+    return f"receipts/{timezone.localdate():%Y/%m}/{uuid.uuid4().hex}.{extension}"
 
 class Customer(models.Model):
     name = models.CharField(max_length=150)
@@ -47,6 +70,7 @@ class Invoice(models.Model):
     originating_quote = models.OneToOneField(Quote, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoice')
     invoice_number = models.CharField(max_length=50, unique=True, editable=False)
     issue_date = models.DateField(auto_now_add=True)
+    paid_date = models.DateField(null=True, blank=True)
     due_date = models.DateField()
     final_amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unpaid')
@@ -57,7 +81,16 @@ class Invoice(models.Model):
     pdf_emailed = models.BooleanField(default=False, verbose_name="Emailed to Client")
 
     def save(self, *args, **kwargs):
-            """Automatically assigns sequential invoice numbers incrementing by 1 (e.g., INV-1001)."""
+            if self.status == 'paid' and self.paid_date is None:
+                self.paid_date = timezone.localdate()
+            elif self.status != 'paid':
+                self.paid_date = None
+
+            update_fields = kwargs.get('update_fields')
+            if update_fields is not None and 'status' in update_fields:
+                kwargs['update_fields'] = set(update_fields) | {'paid_date'}
+
+            # Assign sequential invoice numbers (e.g., INV-1001).
             if not self.invoice_number:
                 # 1. Look up the absolute latest created invoice row in the database
                 latest_invoice = Invoice.objects.order_by('-id').first()
@@ -185,3 +218,53 @@ class Invoice(models.Model):
         self.pdf_generated = True
         self.pdf_emailed = True
         self.save()
+
+
+class Transaction(models.Model):
+    TYPE_CHOICES = [
+        ('income', 'Income'),
+        ('expense', 'Expense'),
+    ]
+
+    transaction_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    date = models.DateField(default=timezone.localdate)
+    merchant = models.CharField(max_length=120, blank=True)
+    category = models.CharField(max_length=80)
+    description = models.CharField(max_length=200, blank=True)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    tax_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        validators=[MinValueValidator(Decimal('0.00'))],
+    )
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+    )
+    receipt = models.ImageField(
+        upload_to=receipt_upload_path,
+        storage=PrivateReceiptStorage(),
+        blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp']),
+            ReceiptSizeValidator(),
+        ],
+    )
+    source_invoice = models.OneToOneField(
+        Invoice,
+        on_delete=models.CASCADE,
+        related_name='income_transaction',
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('-date', '-created_at')
+        verbose_name = 'income / expense entry'
+        verbose_name_plural = 'income / expense entries'
+
+    def __str__(self):
+        return f"{self.get_transaction_type_display()}: ${self.amount:,.2f} - {self.category}"

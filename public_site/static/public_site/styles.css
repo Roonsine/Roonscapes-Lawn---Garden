@@ -183,6 +183,174 @@ nav ul li a:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.03);
 }
 
+#contact.quote-section {
+    background-color: #f3f7f3;
+    padding: 3rem 0;
+}
+
+#contact .quote-card {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 2.5rem;
+    background: #ffffff;
+    border: 1px solid #e1e9e2;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(43, 58, 43, 0.08);
+}
+
+#contact .quote-heading {
+    margin-bottom: 1.75rem;
+}
+
+#contact .quote-kicker {
+    margin-bottom: 0.4rem;
+    color: #2e6f40;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+#contact .quote-heading h2 {
+    margin-bottom: 0.5rem;
+    color: #2b3a2b;
+    font-size: 2rem;
+    line-height: 1.2;
+}
+
+#contact .quote-heading > p:last-child {
+    max-width: 600px;
+    color: #5b6b5e;
+}
+
+#contact .quote-messages {
+    margin-bottom: 1.25rem;
+}
+
+#contact .quote-message {
+    padding: 0.85rem 1rem;
+    border: 1px solid #cce4d1;
+    border-radius: 6px;
+    background: #eff8f1;
+    color: #235330;
+}
+
+#contact .quote-form {
+    display: grid;
+    gap: 1.15rem;
+}
+
+#contact .quote-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+#contact .quote-field {
+    display: grid;
+    gap: 0.4rem;
+}
+
+#contact .quote-field label,
+#contact .quote-checkbox {
+    color: #354638;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+#contact .quote-field input,
+#contact .quote-field select,
+#contact .quote-field textarea {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid #c3d1c7;
+    border-radius: 6px;
+    background: #fcfdfc;
+    color: #2b3a2b;
+    font: inherit;
+}
+
+#contact .quote-field input:focus,
+#contact .quote-field select:focus,
+#contact .quote-field textarea:focus {
+    outline: none;
+    border-color: #2e6f40;
+    box-shadow: 0 0 0 3px rgba(46, 111, 64, 0.12);
+}
+
+#contact .quote-field textarea {
+    resize: vertical;
+}
+
+#contact .quote-field small {
+    color: #647367;
+}
+
+#contact .quote-service-fields {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e1e9e2;
+    border-radius: 8px;
+    background: #f8fbf8;
+}
+
+#contact .quote-hidden {
+    display: none;
+}
+
+#contact .quote-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    cursor: pointer;
+}
+
+#contact .quote-checkbox input {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    accent-color: #2e6f40;
+}
+
+#contact .quote-price {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid #dce8dd;
+    border-radius: 8px;
+    background: #f4f9f4;
+    color: #4a5d4e;
+    font-weight: 600;
+}
+
+#contact .quote-price strong {
+    color: #2e6f40;
+    font-size: 1.5rem;
+}
+
+#contact .quote-submit {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    border: 0;
+    border-radius: 6px;
+    background: #2e6f40;
+    color: #ffffff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+#contact .quote-submit:hover {
+    background: #235330;
+    transform: translateY(-1px);
+}
+
 form input, form textarea {
     width: 100%;
     padding: 0.75rem;
@@ -252,5 +420,18 @@ footer {
     }
     .hero-content h2 {
         font-size: 2rem;
+    }
+
+    #contact .quote-card {
+        padding: 1.5rem;
+    }
+
+    #contact .quote-fields {
+        grid-template-columns: 1fr;
+    }
+
+    #contact .quote-price {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }

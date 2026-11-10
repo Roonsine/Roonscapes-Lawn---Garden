@@ -1,0 +1,17 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block after_field_sets %}
+    {{ block.super }}
+    <div class="mt-4 mb-6 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+        <button type="button"
+                id="read-receipt-button"
+                data-ocr-url="{% url 'admin:business_manager_transaction_receipt_ocr' %}"
+                class="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-2 px-4 rounded">
+            Read receipt
+        </button>
+        <p id="receipt-ocr-status" class="mt-2 text-sm text-gray-600 dark:text-gray-300" aria-live="polite">
+            Local OCR requires Tesseract installed on this PC. The receipt image is not sent to a third party. Review suggested values before saving.
+        </p>
+    </div>
+{% endblock %}
